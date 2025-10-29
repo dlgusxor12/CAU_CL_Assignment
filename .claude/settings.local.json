@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(front.exe eval:*)",
+      "Bash(./front.exe:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
