@@ -24,7 +24,6 @@ ifstream input_file;
 // Symbol table to store variable values
 map<string, double> symbol_table;
 map<string, bool> is_defined;
-map<string, bool> error_reported;
 
 // Counters for each statement
 int id_count, const_count, op_count;
@@ -306,18 +305,6 @@ void statement() {
     cout << "ID: " << id_count << "; CONST: " << const_count
          << "; OP: " << op_count << ";" << endl;
 
-    // Check for undefined variables
-    if (!referenced_undefined_vars.empty() && !has_parsing_error) {
-        for (const auto& var : referenced_undefined_vars) {
-            if (!is_defined[var] && !error_reported[var]) {
-                has_parsing_error = true;
-                parsing_error_messages.push_back("정의되지 않은 변수(" + var + ")가 참조됨");
-                error_reported[var] = true;
-                break;
-            }
-        }
-    }
-
     if (has_parsing_error) {
         for (const auto& msg : parsing_error_messages) {
             cout << "(ERROR) " << msg << endl;
@@ -325,11 +312,27 @@ void statement() {
         is_defined[var_name] = false;
     } else {
         cout << "(OK)" << endl;
-        double result = expr_tree->evaluate();
-        if (!has_evaluation_error) {
-            symbol_table[var_name] = result;
-            is_defined[var_name] = true;
+
+        // Check if there are any undefined variables
+        bool has_undefined = false;
+        for (const auto& var : referenced_undefined_vars) {
+            if (!is_defined[var]) {
+                has_undefined = true;
+                break;
+            }
+        }
+
+        // Only evaluate if all referenced variables are defined
+        if (!has_undefined) {
+            double result = expr_tree->evaluate();
+            if (!has_evaluation_error) {
+                symbol_table[var_name] = result;
+                is_defined[var_name] = true;
+            } else {
+                is_defined[var_name] = false;
+            }
         } else {
+            // Cannot evaluate due to undefined variables
             is_defined[var_name] = false;
         }
     }
